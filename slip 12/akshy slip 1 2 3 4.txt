@@ -1,0 +1,189 @@
+//////slip1///////
+q1;-
+
+create trigger  chack111
+after update on customer
+for each row execute procedure fun1() ;
+
+create or replace function fun1()  returns trigger as 
+'
+declare
+      
+begin
+      if old. cno = new. cno then
+         raise notice ''you can not change  exiting customer number''; 
+return 0;
+end if;
+return old;
+end;
+'language 'plpgsql';
+
+
+
+q2 
+. Write a stored function to accept branch name as an input parameter and display loan
+information of that branch.
+ans:-
+
+create or replace function ff(name varchar(40)) returns table ( l_amt_required int, l_amt_approved int, l_date date)  as
+'
+begin
+    return query
+     select  loan. i_amt_required, loan. l_amt_approved, loan. i_date from loan, branch, tanary  where  bname = name  and  loan. lno=tanary.lno and branch. bid=tanary.bno;
+end;
+'language 'plpgsql';
+
+////////slip2/////////////
+
+ q)
+ Write a trigger to validate the loan amount approved. It must be less than or equal to loan
+amount required. Display appropriate message.
+
+ans) 
+create trigger  amt_check 
+after insert on loan
+for each row execute procedure  a() ;
+
+create or replace function a() returns trigger as
+'
+   begin 
+       if new. l_amt_approved >= new. i_amt_required then
+   raise exception  ''approved amount is greter than required amount'';
+ end if;
+return new;
+end;
+'language 'plpgsql';
+
+
+
+question]:-
+Write a stored function to count number of customers of particular branch. (Accept branch
+name as an input parameter). Display message for invalid branch name.
+
+ans 
+
+create or replace function  cus_cnt(name varchar(30))  returns int  as
+'
+   declare 
+       ans int ;
+        n int;
+   begin
+         select into n count(*) from  customer, branch where bname=name;
+
+      if n = 0 then
+         raise exception ''invalid branch name %'', name;
+end if;
+select into ans count(*) from branch as b, customer as c, tanary as t where b. bname=name and b. bid=t.bno and c. cno=t.cno;
+return ans;
+   end;
+'language 'plpgsql';
+
+
+
+///////////slip 3/////////////
+question :-
+Write a trigger before inserting record of customer in customer table. If the customernumber is less than or equal to zero then display the appropriate error message
+
+ans 
+create trigger check_cno
+before insert on customer 
+for each row execute procedure  fun12() ;
+
+create or replace function fun12() returns trigger as
+'
+  declare
+  begin
+      if new. cno <= 0 then 
+        raise notice ''customer number is not less then 0 or equal to zero'';
+return 0;
+end if;
+return new;
+  end;
+'language 'plpgsql';
+
+
+question 2
+Write a cursor to display customer details along with their approved loan amount
+
+ans 
+
+create or replace function print_data() returns int as
+'
+declare 
+cnt int :=0;
+c1 cursor for  select * from customer;
+c2 cursor for select * from loan;
+c3 cursor for  select * from tanary;
+r1 customer%rowtype;
+r2 loan%rowtype;
+r3 tanary%rowtype;
+begin
+   open c1;
+      loop
+         fetch c1 into r1 ;
+             exit  when not found;
+                  open c3 ;
+                       loop
+                            fetch c3 into r3 ;
+                                exit when not found;
+                               if r1. cno=r3.cno then
+                                    open c2;
+                                        loop
+                                            fetch c2 into r2 ;
+                                           exit when not found;
+                                          if r2. lno = r3.lno then
+      raise notice '' % % % % '', r1. cname, r1. cadds, r1. city, r2.l_amt_approved;
+ cnt := cnt +1;
+                                         end if; 
+                                        end loop;
+                                     close c2;
+                               end if;
+                      end loop;
+                   close c3;
+      end loop;
+   close c1;
+return cnt;
+end;
+'language 'plpgsql';
+
+
+
+
+//////////slip 4//////////
+
+question 1
+Write a trigger before inserting the driver record in driver table, if the age is not between 18and 35, then display error message ‘Invalid input’.
+
+
+ans
+create trigger check_age 
+before insert on driver 
+for each row execute procedure fun18() ;
+
+create or replace function fun18() returns trigger as 
+'
+   begin
+          if new. age < 18  or  new. age > 35 then
+   raise notice ''invalid input'';
+    return 0;
+end if;
+return new;
+   end;
+'language 'plpgsql';
+
+
+quation 2
+  Write a stored function to display details of buses running on route_no = ‘ ’. (Accept
+route_no as an input parameter.) 
+
+ans
+
+create or replace function details(route_no int) returns table( depot_name  varchar(30),   capacity int, bus_no int) as
+'
+begin
+   return query
+   select bus. depot_name , bus. capacity, bus. bno from bus, route where route. rno = route_no and  route. rno=bus.bno;
+end;
+'language 'plpgsql';
+
+
